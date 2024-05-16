@@ -313,6 +313,28 @@ impl OpCode {
     pub const fn get(self) -> u8 {
         self.0
     }
+
+    /// Returns true if the opcode modifies memory.
+    /// <https://bluealloy.github.io/revm/crates/interpreter/memory.html#opcodes>
+    /// <https://github.com/crytic/evm-opcodes>
+    #[inline]
+    pub const fn modifies_memory(&self) -> bool {
+        matches!(
+            *self,
+            OpCode::EXTCODECOPY
+                | OpCode::MLOAD
+                | OpCode::MSTORE
+                | OpCode::MSTORE8
+                | OpCode::MCOPY
+                | OpCode::CODECOPY
+                | OpCode::CALLDATACOPY
+                | OpCode::RETURNDATACOPY
+                | OpCode::CALL
+                | OpCode::CALLCODE
+                | OpCode::DELEGATECALL
+                | OpCode::STATICCALL
+        )
+    }
 }
 
 /// Information about opcode, such as name, and stack inputs and outputs.
@@ -759,7 +781,7 @@ opcodes! {
     // 0xEA
     // 0xEB
     0xEC => EOFCREATE       => contract::eofcreate            => stack_io(4, 1), immediate_size(1);
-    0xED => TXCREATE        => contract::txcreate             => stack_io(5, 1);
+    // 0xED
     0xEE => RETURNCONTRACT  => contract::return_contract      => stack_io(2, 0), immediate_size(1), terminating;
     // 0xEF
     0xF0 => CREATE       => contract::create::<false, H, SPEC> => stack_io(3, 1), not_eof;
@@ -769,11 +791,11 @@ opcodes! {
     0xF4 => DELEGATECALL => contract::delegate_call::<H, SPEC> => stack_io(6, 1), not_eof;
     0xF5 => CREATE2      => contract::create::<true, H, SPEC>  => stack_io(4, 1), not_eof;
     // 0xF6
-    0xF7 => RETURNDATALOAD => system::returndataload           => stack_io(1, 1);
-    0xF8 => EXTCALL        => contract::extcall::<H, SPEC>     => stack_io(4, 1);
-    0xF9 => EXFCALL        => contract::extdcall::<H, SPEC>    => stack_io(3, 1);
-    0xFA => STATICCALL     => contract::static_call::<H, SPEC> => stack_io(6, 1), not_eof;
-    0xFB => EXTSCALL       => contract::extscall               => stack_io(3, 1);
+    0xF7 => RETURNDATALOAD  => system::returndataload                => stack_io(1, 1);
+    0xF8 => EXTCALL         => contract::extcall::<H, SPEC>          => stack_io(4, 1);
+    0xF9 => EXTDELEGATECALL => contract::extdelegatecall::<H, SPEC>  => stack_io(3, 1);
+    0xFA => STATICCALL      => contract::static_call::<H, SPEC>      => stack_io(6, 1), not_eof;
+    0xFB => EXTSTATICCALL   => contract::extstaticcall               => stack_io(3, 1);
     // 0xFC
     0xFD => REVERT       => control::revert::<H, SPEC>    => stack_io(2, 0), terminating;
     0xFE => INVALID      => control::invalid              => stack_io(0, 0), terminating;
